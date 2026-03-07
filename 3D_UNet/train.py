@@ -13,10 +13,10 @@ def train():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device} (NVIDIA L40S)")
 
-    # Data Loading
-    # Utilizing 128-core AMD EPYC via num_workers
-    train_ds = SPECT2CTDataset("data/TrainMat")
-    val_ds   = SPECT2CTDataset("data/ValdMat")
+    # Data Loading - UPDATED PATHS
+    # "../" goes one level up to the root folder, then into "data_1"
+    train_ds = SPECT2CTDataset("../data/TrainMat")
+    val_ds   = SPECT2CTDataset("../data/ValdMat")
 
     train_loader = DataLoader(
         train_ds, batch_size=4, shuffle=True, 
