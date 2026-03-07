@@ -13,7 +13,7 @@ def pick_device():
     return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 @torch.no_grad()
-def evaluate(split_dir="../data_1/TestMat",  # UPDATED PATH
+def evaluate(split_dir="../data/TestMat",  # UPDATED PATH
              ckpt_path="checkpoints/best_model.pt",
              batch_size=1, 
              save_plots=True,
