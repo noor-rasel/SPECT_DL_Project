@@ -4,7 +4,7 @@
 Patient_Data/
 SIMIND_Data/
 XCAT_Data/
-
+Analysis_BV307/
 # ===============================
 # DL outputs
 # ===============================
@@ -35,3 +35,4 @@ __pycache__/
 # Documents
 # ===============================
 *.docx
+Analysis_BV307/
