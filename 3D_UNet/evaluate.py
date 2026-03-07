@@ -13,7 +13,7 @@ def pick_device():
     return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 @torch.no_grad()
-def evaluate(split_dir="data/TestMat",
+def evaluate(split_dir="../data_1/TestMat",  # UPDATED PATH
              ckpt_path="checkpoints/best_model.pt",
              batch_size=1, 
              save_plots=True,
@@ -23,12 +23,13 @@ def evaluate(split_dir="data/TestMat",
     device = pick_device()
     print(f"Evaluating on: {device}")
     
-    # Create subdirectories for outputs
+    # Create subdirectories for organized output
     plot_dir = os.path.join(out_dir, "plot")
     mat_dir = os.path.join(out_dir, "mat_file")
     os.makedirs(plot_dir, exist_ok=True)
     os.makedirs(mat_dir, exist_ok=True)
 
+    # Dataset will now look into ../data_1/TestMat
     ds = SPECT2CTDataset(split_dir)
     loader = DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=4)
 
@@ -47,30 +48,26 @@ def evaluate(split_dir="data/TestMat",
         mae_sum += F.l1_loss(pred, y, reduction="sum").item()
         nvox_sum += y.numel()
 
-        # Extract 3D Volume (D, H, W)
-        # Permute back to (H, W, D) for standard MATLAB/SPECT format
+        # Extract 3D Volume (D, H, W) -> (H, W, D) for MATLAB
         p_vol = pred[0, 0].cpu().numpy().transpose(1, 2, 0)
         t_vol = y[0, 0].cpu().numpy().transpose(1, 2, 0)
 
-        # Save as .mat file for MATLAB analysis
+        # 1. Save as .mat file
         if save_mats:
             mat_filename = os.path.join(mat_dir, f"P_{bi:03d}_pred.mat")
-            # save both prediction and target for direct comparison in MATLAB
             savemat(mat_filename, {
                 'pred_attnmap': p_vol,
                 'target_attnmap': t_vol,
                 'description': 'Generated via 3D U-Net SPECT2CT'
             })
 
-        # 3-Plane Visualization
+        # 2. 3-Plane Visualization
         if save_plots:
-            # Slicing 
             h_idx, w_idx, d_idx = np.array(p_vol.shape) // 2
 
             fig, axes = plt.subplots(2, 3, figsize=(15, 10))
             plt.suptitle(f"Case {bi} Evaluation")
 
-            # Axial: (H,W), Sagittal: (D,H), Coronal: (D,W)
             planes = [
                 (t_vol[:, :, d_idx], p_vol[:, :, d_idx], "Axial"),
                 (t_vol[:, w_idx, :], p_vol[:, w_idx, :], "Sagittal"),
@@ -85,6 +82,7 @@ def evaluate(split_dir="data/TestMat",
                 plt.colorbar(im, ax=axes[1, i], fraction=0.046, pad=0.04)
 
             plt.tight_layout()
+            # Saved with P_ prefix to match your request
             plt.savefig(os.path.join(plot_dir, f"P_{bi:03d}.png"))
             plt.close()
 
