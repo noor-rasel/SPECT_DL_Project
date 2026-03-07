@@ -1,38 +1,26 @@
-# ===============================
 # master datasets
-# ===============================
 Patient_Data/
 SIMIND_Data/
 XCAT_Data/
 Analysis_BV307/
-# ===============================
+
 # DL outputs
-# ===============================
 3D_UNet/test_results/
 3D_UNet/result_case_000.png
 
-# ===============================
-# MATLAB temp and script files
-# ===============================
+# MATLAB scripts
 *.asv
 *.m
 
-# MATLAB/pre_DL code folder
+# pre_DL code folder
 Pre_DL_OSEM_code/
 
-# ===============================
 # MacOS system files
-# ===============================
 .DS_Store
 
-# ===============================
 # Python cache
-# ===============================
 __pycache__/
 *.pyc
 
-# ===============================
 # Documents
-# ===============================
 *.docx
-Analysis_BV307/
