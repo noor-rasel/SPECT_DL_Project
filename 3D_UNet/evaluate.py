@@ -1,6 +1,7 @@
 import os
 import torch
 import numpy as np 
+import time  
 from torch.utils.data import DataLoader
 from scipy.io import savemat
 
@@ -29,14 +30,27 @@ def evaluate(test_dir="../data/TestMat",
     model.eval()
 
     print(f"Found {len(ds)} test cases. Starting inference...")
+    
+    inference_times = []
+    total_start_time = time.time()
 
     for bi, (x, y) in enumerate(loader):
         original_path = ds.files[bi]
         patient_id = os.path.basename(original_path).replace(".mat", "")
 
+        start_tick = time.time()
+
         # Inference
         x = x.to(device)
         pred = model(x)
+        
+        # Ensure GPU finishes work before stopping the clock
+        if device.type == 'cuda':
+            torch.cuda.synchronize()         
+        end_tick = time.time()
+
+        duration = end_tick - start_tick
+        inference_times.append(duration)
 
         # Transpose to MATLAB format (H, W, D)
         p_vol = pred[0, 0].cpu().numpy().transpose(1, 2, 0)
@@ -46,12 +60,20 @@ def evaluate(test_dir="../data/TestMat",
         save_path = os.path.join(out_dir, f"{patient_id}_unet.mat")
         savemat(save_path, {
             'pred_attnmap': p_vol,
-            'target_attnmap': t_vol
+            'target_attnmap': t_vol,
+            'inference_time_sec': duration # Optional: save time inside the .mat
         })
 
-        print(f"Processed: {patient_id}")
+        print(f"Processed: {patient_id} | Time: {duration:.4f}s")
 
-    print(f"\nSaved {len(ds)} files to {out_dir}")
+    total_duration = time.time() - total_start_time
+    avg_time = np.mean(inference_times)
+    
+    print("-" * 30)
+    print(f"Evaluation Complete!")
+    print(f"Total Time for {len(ds)} patients: {total_duration:.2f}s")
+    print(f"Average Time per Synthesis: {avg_time:.4f}s")
+    print(f"Results saved to: {out_dir}")
 
 if __name__ == "__main__":
     evaluate()
