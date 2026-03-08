@@ -1,5 +1,7 @@
 import os
 import torch
+import random
+import numpy as np
 from torch.utils.data import DataLoader
 from dataset import SPECT2CTDataset
 from model import UNet3D
@@ -8,26 +10,33 @@ from utils import EarlyStopping
 # Setup Directories
 os.makedirs("checkpoints", exist_ok=True)
 
+def set_seed(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
 def train():
+    set_seed(42) # Ensure training is reproducible
+    
     # Use CUDA 0 (NVIDIA L40S)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device} (NVIDIA L40S)")
 
-    # Data Loading - UPDATED PATHS
-    # "../" goes one level up to the root folder, then into "data_1"
+    # Data Loading 
     train_ds = SPECT2CTDataset("../data/TrainMat")
     val_ds   = SPECT2CTDataset("../data/ValdMat")
 
     train_loader = DataLoader(
-        train_ds, batch_size=4, shuffle=True, 
+        train_ds, batch_size=16, shuffle=True, 
         num_workers=8, pin_memory=True
     )
     val_loader   = DataLoader(
-        val_ds, batch_size=4, shuffle=False, 
+        val_ds, batch_size=16, shuffle=False, 
         num_workers=8, pin_memory=True
     )
 
-    # Model - base=32 matches the 46GB VRAM capacity
+    # UNet_Model - base=32
     model = UNet3D(in_ch=2, out_ch=1, base=32).to(device)
     
     criterion = torch.nn.MSELoss()
@@ -36,6 +45,8 @@ def train():
     stopper = EarlyStopping(patience=50)
 
     best_val = float("inf")
+
+    print(f"Starting training with {len(train_ds)} cases...")
 
     for epoch in range(1, 1001):       
         # Training Phase
@@ -73,7 +84,7 @@ def train():
             torch.save(model.state_dict(), "checkpoints/best_model.pt")
             print(f"Epoch {epoch:03d} | Train: {train_loss:.6f} | Val: {val_loss:.6f} *Best*")
         else:
-            if epoch % 10 == 0:
+            if epoch % 5 == 0: # Print more frequently now that you have more data
                 print(f"Epoch {epoch:03d} | Train: {train_loss:.6f} | Val: {val_loss:.6f}")
 
         if stop_now:
